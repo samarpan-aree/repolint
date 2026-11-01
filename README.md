@@ -2,8 +2,8 @@
 
 **Audit any repo against a professional-repo checklist. Weighted 0–100 score, CI-ready.**
 
-[![CI](https://github.com/ROYAL-SMP/repolint/actions/workflows/ci.yml/badge.svg)](https://github.com/ROYAL-SMP/repolint/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.9%20–%203.12-blue)](https://www.python.org/)
+[![CI](https://github.com/samarpan-aree/repolint/actions/workflows/ci.yml/badge.svg)](https://github.com/samarpan-aree/repolint/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.10%20%E2%80%93%203.12-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Dependencies](https://img.shields.io/badge/dependencies-zero-success)](pyproject.toml)
 
