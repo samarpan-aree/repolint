@@ -1,94 +1,98 @@
 # repolint
 
-**Audit any repository against a professional-repo checklist and get a weighted score.**
+**Audit any repo against a professional-repo checklist. Weighted 0–100 score, CI-ready.**
 
 [![CI](https://github.com/ROYAL-SMP/repolint/actions/workflows/ci.yml/badge.svg)](https://github.com/ROYAL-SMP/repolint/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.9%20–%203.12-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-60%20passing-brightgreen)](tests/)
 [![Dependencies](https://img.shields.io/badge/dependencies-zero-success)](pyproject.toml)
 
-Most repositories fail for boring, fixable reasons: no license, a two-line README, no CI, no tests. `repolint` turns that into a number you can act on — and a CI gate you can enforce.
+Most repositories fail for boring, fixable reasons: no license, a two-line README, no CI, no tests. `repolint` turns that into a number you can act on — and a gate you can enforce.
 
 ```
 $ repolint .
-
-repolint — repository audit
-
-  [PASS] README present (20 pts)
-         README.md found (4821 characters).
-
-  [FAIL] License file (15 pts)
-         No LICENSE file found.
-         fix: Add an OSI license (MIT or Apache-2.0) so others can legally use the code.
-
-  [PASS] .gitignore (10 pts)
-         .gitignore has 24 rules.
-
-  [FAIL] CI configuration (15 pts)
-         No CI configuration found.
-         fix: Add .github/workflows/ci.yml that installs deps and runs the test suite.
-
-  [PASS] Test suite (20 pts)
-         3 test file(s) detected.
-
-  [PASS] Project description (10 pts)
-         Description declared in pyproject.toml.
-
-  [PASS] Directory structure (10 pts)
-         2 loose file(s) at the root — acceptable.
+  [PASS] README present (20 pts)      README.md found (4821 characters).
+  [FAIL] License file (15 pts)        No LICENSE file found.
+         fix: Add an OSI license (MIT or Apache-2.0).
+  [FAIL] CI configuration (15 pts)    No CI configuration found.
+         fix: Add .github/workflows/ci.yml.
+  [PASS] Test suite (20 pts)          3 test file(s) detected.
 
 Score: 70/100  grade C
-5 passed, 2 failed (70/100 weighted points)
 ```
 
----
-
-## Why this exists
-
-A repository is a portfolio artifact. Recruiters and reviewers open it for about fifteen seconds and decide whether you are careful. The signals they look for are consistent and cheap to produce — but they are also easy to forget. `repolint` encodes that checklist so it stops being a matter of memory.
-
-It is deliberately **dependency-free** and **offline**: it reads the filesystem, never the network, so it runs in any CI job in under a second.
+Dependency-free and offline: reads the filesystem, never the network. Runs in any CI job in under a second.
 
 ## Install
 
 ```bash
-pip install -e .
-```
-
-Or run it without installing:
-
-```bash
-python -m repolint .
+pip install -e .        # or: python -m repolint .
 ```
 
 ## Usage
 
 ```bash
-repolint [path] [options]
+repolint [path] [--json] [--min-score N] [--no-colour] [--version]
 ```
 
 | Option | Description |
 | --- | --- |
-| `path` | Repository to audit. Defaults to the current directory. |
-| `--json` | Emit machine-readable JSON instead of a text report. |
-| `--min-score N` | Exit with status `1` if the score is below `N`. |
-| `--no-colour` | Disable ANSI colours (auto-disabled when not a TTY). |
-| `--version` | Print the version and exit. |
-
-### In CI
-
-Fail the build when a repository drops below your standard:
+| `path` | Repository to audit (default: cwd). |
+| `--json` | Machine-readable output. |
+| `--min-score N` | Exit `1` if score falls below `N`. |
 
 ```yaml
 - name: Enforce repository quality
-  run: |
-    pip install -e .
-    repolint . --min-score 80
+  run: pip install -e . && repolint . --min-score 80
 ```
 
-### As a JSON feed
+## Checks
+
+| Check | Weight | Fails when |
+| --- | --- | --- |
+| README present | 20 | Missing, or under 400 chars |
+| Test suite | 20 | No `test_*.py` / `*.test.ts` / `*.spec.ts` |
+| License file | 15 | No `LICENSE`, `LICENSE.md`, `COPYING` |
+| CI configuration | 15 | No Actions, GitLab, Circle, Azure or Travis config |
+| `.gitignore` | 10 | Missing, or under 3 real rules |
+| Project description | 10 | No description in `pyproject.toml` / `package.json` |
+| Directory structure | 10 | More than 12 loose files at root |
+
+Grades: **A** ≥ 90, **B** ≥ 80, **C** ≥ 70, **D** ≥ 60, **F** below.
+
+## Architecture
+
+```
+repolint/
+├── repolint/
+│   ├── __init__.py    # public API
+│   ├── __main__.py    # python -m repolint
+│   ├── checks.py      # 7 pure filesystem checks -> CheckResult
+│   ├── scoring.py     # weighted aggregation -> ScoreReport
+│   └── cli.py         # argparse, rendering, exit codes
+└── tests/             # one class per check, tmp_path fixtures
+```
+
+- **`checks.py`** — every check is a pure `Path -> CheckResult`. No shared state, no ordering assumptions, so each is asserted in isolation against a fixture repo.
+- **`scoring.py`** — filesystem-agnostic. Results in, weighted percentage and grade out. Rounding is half-up, so `89.5` becomes `90`.
+- **`cli.py`** — presentation and process: arguments, ANSI colour, JSON, exit codes (`0` ok, `1` below threshold, `2` bad path).
+
+Adding a check is one function appended to `ALL_CHECKS`; scoring and CLI pick it up automatically.
+
+## Development
 
 ```bash
-repolint . --json | jq '.score, .grade, [.checks[] | select(.passed == false) | .key]'
+pip install -e ".[dev]"
+pytest --cov=repolint --cov-report=term-missing
 ```
+
+## Roadmap
+
+- [ ] `--fix` mode scaffolding missing files
+- [ ] Configurable weights via `.repolint.toml`
+- [ ] Action wrapper commenting the score on PRs
+- [ ] `--badge` emitting a shields.io endpoint payload
+
+## License
+
+MIT — see [LICENSE](LICENSE).
