@@ -7,7 +7,7 @@ name = "repolint"
 version = "1.0.0"
 description = "Audit any repository against a professional-repo checklist and get a weighted score."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Samarpan Aree" }]
 keywords = ["cli", "code-quality", "repository", "audit", "developer-tools"]
@@ -17,7 +17,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -32,9 +31,9 @@ dev = ["pytest>=7.4", "pytest-cov>=4.1"]
 repolint = "repolint.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/ROYAL-SMP/repolint"
-Repository = "https://github.com/ROYAL-SMP/repolint"
-Issues = "https://github.com/ROYAL-SMP/repolint/issues"
+Homepage = "https://github.com/samarpan-aree/repolint"
+Repository = "https://github.com/samarpan-aree/repolint"
+Issues = "https://github.com/samarpan-aree/repolint/issues"
 
 [tool.setuptools.packages.find]
 include = ["repolint*"]
